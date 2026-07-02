@@ -1,0 +1,13 @@
+flask
+flask-cors
+flask-sqlalchemy
+bcrypt
+faker
+presidio-analyzer
+presidio-anonymizer
+spacy
+numpy
+python-dotenv
+groq
+Pillow
+pytesseract

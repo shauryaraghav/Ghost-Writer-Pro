@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ghost-Writer Pro</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d1a; color: #e2e2f0;
+      display: flex; min-height: 100vh;
+    }
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 220px; background: #12122a;
+      border-right: 1px solid rgba(255,255,255,0.07);
+      display: flex; flex-direction: column;
+      padding: 24px 16px; gap: 6px; flex-shrink: 0;
+    }
+    .sidebar-logo { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #fff; }
+    .sidebar-logo span { color: #7c3aed; }
+    .nav-btn {
+      padding: 10px 14px; border-radius: 8px;
+      cursor: pointer; color: #a1a1aa; font-size: 14px;
+      transition: all 0.2s; border: none; background: transparent;
+      text-align: left; width: 100%;
+    }
+    .nav-btn:hover { background: rgba(124,58,237,0.15); color: #fff; }
+    .nav-btn.active { background: rgba(124,58,237,0.25); color: #a78bfa; font-weight: 600; }
+    .sidebar-footer { margin-top: auto; }
+    .user-badge {
+      background: rgba(255,255,255,0.05);
+      padding: 10px 12px; border-radius: 8px;
+      font-size: 13px; color: #a1a1aa; margin-bottom: 8px;
+    }
+    .logout-btn {
+      width: 100%; padding: 10px; background: rgba(239,68,68,0.15);
+      border: none; border-radius: 8px; color: #f87171;
+      cursor: pointer; font-size: 13px;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.3); }
+
+    /* ── Main ── */
+    .main { flex: 1; padding: 28px; overflow-y: auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+    h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .page-sub { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
+
+    /* ── Cards ── */
+    .card {
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; padding: 20px; margin-bottom: 16px;
+    }
+    .card-title { font-size: 13px; color: #7c3aed; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Inputs ── */
+    textarea, input[type="text"], input[type="number"] {
+      width: 100%; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; color: #e2e2f0; font-size: 14px;
+      padding: 12px 14px; outline: none; resize: vertical;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    textarea:focus, input:focus { border-color: #7c3aed; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .btn-primary { background: #7c3aed; color: #fff; }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-green { background: #059669; color: #fff; }
+    .btn-green:hover { background: #047857; }
+    .btn-blue { background: #2563eb; color: #fff; }
+    .btn-blue:hover { background: #1d4ed8; }
+    .btn-orange { background: #d97706; color: #fff; }
+    .btn-orange:hover { background: #b45309; }
+    .btn-sm { padding: 7px 14px; font-size: 13px; }
+    .btn-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+
+    /* ── Output box ── */
+    .output-box {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; padding: 14px; font-size: 13px;
+      color: #d1d5db; min-height: 60px; white-space: pre-wrap;
+      word-break: break-word; margin-top: 12px;
+    }
+    .output-box.empty { color: #4b5563; font-style: italic; }
+
+    /* ── Stats row ── */
+    .stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .stat-chip {
+      background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 6px; padding: 6px 12px; font-size: 12px; color: #a78bfa;
+    }
+    .stat-chip.green { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #6ee7b7; }
+    .stat-chip.red { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #f87171; }
+    .stat-chip.orange { background: rgba(217,119,6,0.1); border-color: rgba(217,119,6,0.3); color: #fbbf24; }
+
+    /* ── Risk meter ── */
+    .risk-bar { background: rgba(255,255,255,0.07); border-radius: 99px; height: 8px; margin-top: 8px; }
+    .risk-fill { height: 100%; border-radius: 99px; transition: width 0.5s; }
+
+    /* ── Analytics grid ── */
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 14px; }
+    .metric-card {
+      background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 16px; text-align: center;
+    }
+    .metric-val { font-size: 28px; font-weight: 700; color: #a78bfa; }
+    .metric-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+
+    /* ── History ── */
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px; background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .history-item .mode { color: #a78bfa; font-weight: 600; }
+    .history-item .meta { color: #6b7280; font-size: 12px; }
+
+    /* ── Keywords ── */
+    .keyword-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+      color: #6ee7b7; padding: 5px 10px; border-radius: 99px;
+      font-size: 12px; margin: 4px;
+    }
+    .keyword-tag button {
+      background: none; border: none; color: #f87171;
+      cursor: pointer; font-size: 14px; line-height: 1;
+    }
+
+    /* ── Chat ── */
+    .chat-box {
+      background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 16px; min-height: 200px; max-height: 400px;
+      overflow-y: auto; margin-bottom: 12px;
+    }
+    .chat-msg { margin-bottom: 14px; }
+    .chat-msg .role { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .chat-msg.user .role { color: #a78bfa; }
+    .chat-msg.ai .role { color: #6ee7b7; }
+    .chat-msg .text {
+      background: rgba(255,255,255,0.05); border-radius: 8px;
+      padding: 10px 12px; font-size: 14px; color: #d1d5db;
+    }
+    .spinner { color: #7c3aed; font-size: 13px; }
+    .epsilon-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+    .epsilon-row label { font-size: 13px; color: #a1a1aa; white-space: nowrap; }
+    .epsilon-row input { width: 80px; }
+
+    /* ── Image Redaction ── */
+    .upload-zone {
+      border: 2px dashed rgba(124,58,237,0.4); border-radius: 12px;
+      padding: 40px 20px; text-align: center; cursor: pointer;
+      transition: all 0.2s; background: rgba(124,58,237,0.04);
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: #7c3aed; background: rgba(124,58,237,0.1);
+    }
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-zone .upload-icon { font-size: 40px; margin-bottom: 10px; }
+    .upload-zone .upload-label { color: #a1a1aa; font-size: 14px; }
+    .upload-zone .upload-hint  { color: #4b5563; font-size: 12px; margin-top: 6px; }
+
+    .image-compare {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;
+    }
+    .image-compare-panel { }
+    .image-compare-label {
+      font-size: 12px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;
+      letter-spacing: 0.5px; font-weight: 600;
+    }
+    .image-compare img {
+      width: 100%; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .entity-list { margin-top: 12px; }
+    .entity-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05); border-radius: 6px;
+      margin-bottom: 6px; font-size: 12px;
+    }
+    .entity-type { color: #a78bfa; font-weight: 600; }
+    .entity-text { color: #d1d5db; font-family: monospace; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .entity-score { color: #6b7280; }
+
+    .download-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: 8px; font-size: 14px;
+      font-weight: 600; cursor: pointer; border: none;
+      background: #059669; color: #fff; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .download-btn:hover { background: #047857; }
+
+    .loading-overlay {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px; color: #a1a1aa;
+      font-size: 14px; gap: 12px;
+    }
+    .loading-overlay.active { display: flex; }
+    .loading-spinner {
+      width: 36px; height: 36px; border: 3px solid rgba(124,58,237,0.2);
+      border-top-color: #7c3aed; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 700px) {
+      .image-compare { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">👻 Ghost<span>Writer</span></div>
+  <button class="nav-btn active" onclick="showPage('chat', this)">💬 Secure Chat</button>
+  <button class="nav-btn" onclick="showPage('basic', this)">🔒 Basic Mask</button>
+  <button class="nav-btn" onclick="showPage('diff', this)">🎲 Differential</button>
+  <button class="nav-btn" onclick="showPage('imgredact', this)">🖼️ Image Redact</button>
+  <button class="nav-btn" onclick="showPage('decrypt', this)">🔓 Decrypt</button>
+  <button class="nav-btn" onclick="showPage('keywords', this)">🏷️ Keywords</button>
+  <button class="nav-btn" onclick="showPage('analytics', this); loadAnalytics();">📊 Analytics</button>
+  <button class="nav-btn" onclick="showPage('history', this); loadHistory();">🕓 History</button>
+  <div class="sidebar-footer">
+    <div class="user-badge" id="userBadge">👤 Loading...</div>
+    <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SECURE CHAT -->
+  <div class="page active" id="page-chat">
+    <h2>💬 Secure AI Chat</h2>
+    <div class="page-sub">Your message is masked before sending to the AI — PII never leaves your device.</div>
+    <div class="card">
+      <div class="chat-box" id="chatBox">
+        <div style="color:#4b5563; font-style:italic; font-size:13px;">Start a conversation. Your PII is automatically masked before reaching the AI.</div>
+      </div>
+      <textarea id="chatInput" rows="3" placeholder="Type your message here... (e.g. 'My name is Raj Sharma, my PAN is ABCDE1234F. Help me with a tax query.')"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="sendSecureChat()">🚀 Send Securely</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.07); color:#a1a1aa;" onclick="clearChat()">Clear</button>
+      </div>
+      <div id="chatStatus" style="margin-top:8px; font-size:13px;"></div>
+    </div>
+  </div>
+
+  <!-- BASIC MASK -->
+  <div class="page" id="page-basic">
+    <h2>🔒 Basic Masking</h2>
+    <div class="page-sub">Replaces PII with semantic tags like &lt;NAME&gt;, &lt;PAN&gt;, &lt;EMAIL&gt;.</div>
+    <div class="card">
+      <div class="card-title">Input Text</div>
+      <textarea id="basicInput" rows="5" placeholder="Enter text containing PII...&#10;e.g. My name is Priya Sharma. Email: priya@example.com, PAN: ABCDE1234F"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="doBasicMask()">🔒 Mask Text</button>
+      </div>
+    </div>
+    <div class="card" id="basicResult" style="display:none;">
+      <div class="card-title">Masked Output</div>
+      <div class="output-box" id="basicOutput"></div>
+      <div class="stats-row" id="basicStats"></div>
+      <div style="margin-top:12px;">
+        <div style="font-size:12px; color:#a1a1aa; margin-bottom:4px;">Risk Score: <span id="basicRiskVal">0</span>/100</div>
+        <div class="risk-bar"><div class="risk-fill" id="basicRiskFill" style="width:0%; background:#7c3aed;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIFFERENTIAL -->
+  <div class="page" id="page-diff">
+    <h2>🎲 Differential Privacy</h2>
+    <div class="page-sub">Replaces PII with realistic fake data + adds noise. Lower ε = more privacy.</div>
+    <div class="card">
+      <div class="card-title">Input Text</div>
+      <textarea id="diffInput" rows="5" placeholder="Enter text containing PII..."></textarea>
+      <div class="epsilon-row">
+        <label>Privacy Budget (ε):</label>
+        <input type="number" id="epsilonVal" value="1.0" step="0.1" min="0.1" max="10"/>
+        <span style="font-size:12px; color:#6b7280;">Lower = more private</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="doDiffMask()">🎲 Apply Differential Privacy</button>
+      </div>
+    </div>
+    <div class="card" id="diffResult" style="display:none;">
+      <div class="card-title">Faked Output (before noise)</div>
+      <div class="output-box" id="diffFaked"></div>
+      <div class="card-title" style="margin-top:14px;">Noisy Output (sent to AI)</div>
+      <div class="output-box" id="diffNoisy"></div>
+      <div class="stats-row" id="diffStats"></div>
+      <div style="margin-top:12px;">
+        <div style="font-size:12px; color:#a1a1aa; margin-bottom:4px;">Risk Score: <span id="diffRiskVal">0</span>/100</div>
+        <div class="risk-bar"><div class="risk-fill" id="diffRiskFill" style="width:0%; background:#10b981;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE REDACTION -->
+  <div class="page" id="page-imgredact">
+    <h2>🖼️ Image Redaction</h2>
+    <div class="page-sub">Upload an image — OCR detects text, PII is blacked out with redaction bars. The redacted image is safe to share.</div>
+
+    <div class="card">
+      <div class="card-title">Upload Image</div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/jpg,image/bmp,image/webp,image/tiff" onchange="handleImageSelect(this)"/>
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-label">Drop an image here or click to browse</div>
+        <div class="upload-hint">PNG, JPG, JPEG, BMP, WEBP, TIFF — max 10 MB</div>
+      </div>
+
+      <!-- Preview of selected image -->
+      <div id="selectedImagePreview" style="display:none; margin-top:14px;">
+        <div class="image-compare-label">Selected Image</div>
+        <img id="selectedImageThumb" style="max-height:200px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);" alt="Selected"/>
+        <div style="font-size:12px; color:#6b7280; margin-top:6px;" id="selectedImageMeta"></div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-orange" id="redactBtn" onclick="doImageRedact()" disabled>🔍 Detect &amp; Redact PII</button>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div class="card loading-overlay" id="imgLoadingOverlay">
+      <div class="loading-spinner"></div>
+      <div>Running OCR and detecting PII…</div>
+    </div>
+
+    <!-- Results -->
+    <div class="card" id="imgRedactResult" style="display:none;">
+      <div class="card-title">Redaction Result</div>
+
+      <div class="image-compare">
+        <div class="image-compare-panel">
+          <div class="image-compare-label">🔴 Original</div>
+          <img id="imgOriginal" alt="Original"/>
+        </div>
+        <div class="image-compare-panel">
+          <div class="image-compare-label">✅ Redacted</div>
+          <img id="imgRedacted" alt="Redacted"/>
+        </div>
+      </div>
+
+      <div class="stats-row" id="imgStats" style="margin-top:16px;"></div>
+
+      <div style="margin-top:12px;">
+        <div style="font-size:12px; color:#a1a1aa; margin-bottom:4px;">Risk Score: <span id="imgRiskVal">0</span>/100</div>
+        <div class="risk-bar"><div class="risk-fill" id="imgRiskFill" style="width:0%;"></div></div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <a id="downloadRedacted" class="download-btn" download="redacted.png">⬇️ Download Redacted Image</a>
+      </div>
+    </div>
+
+    <!-- Entity detail list -->
+    <div class="card" id="imgEntityCard" style="display:none;">
+      <div class="card-title">Detected Entities</div>
+      <div class="entity-list" id="imgEntityList"></div>
+    </div>
+  </div>
+
+  <!-- DECRYPT -->
+  <div class="page" id="page-decrypt">
+    <h2>🔓 Decrypt / Unmask</h2>
+    <div class="page-sub">Restore masked text using a session ID from a previous masking operation.</div>
+    <div class="card">
+      <div class="card-title">Session ID</div>
+      <input type="text" id="decryptSessionId" placeholder="Paste session ID here..."/>
+      <div class="card-title" style="margin-top:14px;">Masked Text</div>
+      <textarea id="decryptInput" rows="5" placeholder="Paste masked text here..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-blue" onclick="doDecrypt()">🔓 Decrypt</button>
+      </div>
+      <div class="output-box empty" id="decryptOutput">Decrypted text will appear here...</div>
+    </div>
+  </div>
+
+  <!-- KEYWORDS -->
+  <div class="page" id="page-keywords">
+    <h2>🏷️ Custom Keywords</h2>
+    <div class="page-sub">Add secret words or project names to always mask them as &lt;PROTECTED&gt;.</div>
+    <div class="card">
+      <div class="card-title">Add Keyword</div>
+      <div style="display:flex; gap:10px;">
+        <input type="text" id="newKeyword" placeholder="e.g. ProjectApollo, InternalOnly" style="flex:1;"/>
+        <button class="btn btn-primary" onclick="addKeyword()">+ Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Your Keywords</div>
+      <div id="keywordList" style="min-height:40px;">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="page" id="page-analytics">
+    <h2>📊 Analytics</h2>
+    <div class="page-sub">Your session performance metrics.</div>
+    <div class="analytics-grid" id="analyticsGrid">
+      <div class="metric-card"><div class="metric-val" id="metricOps">—</div><div class="metric-label">Total Operations</div></div>
+      <div class="metric-card"><div class="metric-val" id="metricLatency">—</div><div class="metric-label">Avg Latency (ms)</div></div>
+      <div class="metric-card"><div class="metric-val" id="metricEntities">—</div><div class="metric-label">Entities Masked</div></div>
+      <div class="metric-card"><div class="metric-val" id="metricRisk">—</div><div class="metric-label">Avg Risk Score</div></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <h2>🕓 Operation History</h2>
+    <div class="page-sub">Last 20 operations — persisted across sessions.</div>
+    <div id="historyList">Loading...</div>
+  </div>
+
+</div>
+
+<script>
+// ── Navigation ──
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── Auth ──
+async function init() {
+  const res  = await fetch('/api/check');
+  const data = await res.json();
+  if (!data.authenticated) { window.location.href = '/login'; return; }
+  document.getElementById('userBadge').textContent = '👤 ' + data.username;
+  loadKeywords();
+}
+
+async function doLogout() {
+  await fetch('/api/logout', {method:'POST'});
+  window.location.href = '/login';
+}
+
+// ── Secure Chat ──
+async function sendSecureChat() {
+  const input = document.getElementById('chatInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  appendChat('user', text);
+  document.getElementById('chatStatus').innerHTML = '<span class="spinner">🔒 Masking PII and sending...</span>';
+  const res  = await fetch('/api/secure-chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({text})
+  });
+  const data = await res.json();
+  document.getElementById('chatStatus').innerHTML = '';
+  if (data.error) {
+    appendChat('ai', '⚠️ Error: ' + data.error);
+  } else {
+    appendChat('ai', data.response);
+    const count = data.stats ? Object.values(data.stats).reduce((a,b)=>a+b,0) : 0;
+    if (count > 0) {
+      document.getElementById('chatStatus').innerHTML =
+        `<span style="color:#a78bfa; font-size:12px;">🛡️ ${count} PII entities masked before sending</span>`;
+    }
+  }
+}
+
+function appendChat(role, text) {
+  const box = document.getElementById('chatBox');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = `<div class="role">${role === 'user' ? '🧑 You' : '🤖 Ghost-Writer AI'}</div><div class="text">${escHtml(text)}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearChat() {
+  document.getElementById('chatBox').innerHTML = '<div style="color:#4b5563; font-style:italic; font-size:13px;">Chat cleared.</div>';
+  document.getElementById('chatStatus').innerHTML = '';
+}
+
+// ── Basic Mask ──
+async function doBasicMask() {
+  const text = document.getElementById('basicInput').value.trim();
+  if (!text) return;
+  const res  = await fetch('/api/mask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text})});
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  document.getElementById('basicOutput').textContent = data.masked;
+  document.getElementById('basicResult').style.display = 'block';
+  document.getElementById('basicStats').innerHTML =
+    `<div class="stat-chip">${data.total_entities} entities</div>
+     <div class="stat-chip green">${data.latency}ms</div>
+     <div class="stat-chip">Session: ${data.session_id.slice(-8)}</div>` +
+    Object.entries(data.stats).map(([k,v])=>`<div class="stat-chip">${k}: ${v}</div>`).join('');
+  const risk = data.risk_score || 0;
+  document.getElementById('basicRiskVal').textContent = risk;
+  document.getElementById('basicRiskFill').style.width  = risk + '%';
+  document.getElementById('basicRiskFill').style.background = risk > 60 ? '#ef4444' : risk > 30 ? '#f59e0b' : '#7c3aed';
+}
+
+// ── Differential ──
+async function doDiffMask() {
+  const text    = document.getElementById('diffInput').value.trim();
+  const epsilon = parseFloat(document.getElementById('epsilonVal').value) || 1.0;
+  if (!text) return;
+  const res  = await fetch('/api/differential', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text, epsilon})});
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  document.getElementById('diffFaked').textContent = data.faked;
+  document.getElementById('diffNoisy').textContent = data.noisy;
+  document.getElementById('diffResult').style.display = 'block';
+  document.getElementById('diffStats').innerHTML =
+    `<div class="stat-chip">${data.total_entities} entities</div>
+     <div class="stat-chip green">${data.latency}ms</div>
+     <div class="stat-chip">ε = ${data.epsilon}</div>`;
+  const risk = data.risk_score || 0;
+  document.getElementById('diffRiskVal').textContent = risk;
+  document.getElementById('diffRiskFill').style.width  = risk + '%';
+  document.getElementById('diffRiskFill').style.background = risk > 60 ? '#ef4444' : risk > 30 ? '#f59e0b' : '#10b981';
+}
+
+// ── Image Redaction ──
+let selectedImageFile = null;
+
+function handleImageSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  selectedImageFile = file;
+
+  // Show thumbnail
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('selectedImageThumb').src = e.target.result;
+    document.getElementById('selectedImagePreview').style.display = 'block';
+    document.getElementById('selectedImageMeta').textContent =
+      `${file.name}  •  ${(file.size / 1024).toFixed(1)} KB`;
+  };
+  reader.readAsDataURL(file);
+
+  document.getElementById('redactBtn').disabled = false;
+}
+
+// Drag-and-drop
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    selectedImageFile = file;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('imageFileInput').files = dt.files;
+    handleImageSelect(document.getElementById('imageFileInput'));
+  }
+});
+
+async function doImageRedact() {
+  if (!selectedImageFile) return;
+
+  // Show loader, hide result
+  document.getElementById('imgLoadingOverlay').classList.add('active');
+  document.getElementById('imgRedactResult').style.display  = 'none';
+  document.getElementById('imgEntityCard').style.display    = 'none';
+  document.getElementById('redactBtn').disabled = true;
+
+  const formData = new FormData();
+  formData.append('image', selectedImageFile);
+
+  try {
+    const res  = await fetch('/api/redact-image', {method:'POST', body: formData});
+    const data = await res.json();
+
+    document.getElementById('imgLoadingOverlay').classList.remove('active');
+    document.getElementById('redactBtn').disabled = false;
+
+    if (data.error) {
+      alert('Error: ' + data.error);
+      return;
+    }
+
+    // Show compare view
+    const reader = new FileReader();
+    reader.onload = e => { document.getElementById('imgOriginal').src = e.target.result; };
+    reader.readAsDataURL(selectedImageFile);
+
+    const redactedSrc = 'data:image/png;base64,' + data.redacted_image;
+    document.getElementById('imgRedacted').src = redactedSrc;
+    document.getElementById('downloadRedacted').href = redactedSrc;
+
+    // Stats chips
+    const statsEl = document.getElementById('imgStats');
+    statsEl.innerHTML =
+      `<div class="stat-chip orange">${data.total_entities} entities redacted</div>
+       <div class="stat-chip green">${data.latency_ms}ms</div>
+       <div class="stat-chip">Session: ${(data.session_id||'').slice(-8)}</div>` +
+      Object.entries(data.stats || {}).map(([k,v]) => `<div class="stat-chip">${k}: ${v}</div>`).join('');
+
+    const risk = data.risk_score || 0;
+    document.getElementById('imgRiskVal').textContent = risk;
+    document.getElementById('imgRiskFill').style.width      = risk + '%';
+    document.getElementById('imgRiskFill').style.background = risk > 60 ? '#ef4444' : risk > 30 ? '#f59e0b' : '#7c3aed';
+
+    document.getElementById('imgRedactResult').style.display = 'block';
+
+    // Entity detail list
+    const entities = data.entities_found || [];
+    if (entities.length > 0) {
+      document.getElementById('imgEntityList').innerHTML = entities.map(e =>
+        `<div class="entity-row">
+           <span class="entity-type">${escHtml(e.entity)}</span>
+           <span class="entity-text" title="${escHtml(e.text)}">${escHtml(e.text)}</span>
+           <span class="entity-score">conf ${(e.score * 100).toFixed(0)}%</span>
+         </div>`
+      ).join('');
+      document.getElementById('imgEntityCard').style.display = 'block';
+    }
+
+    if (data.message) {
+      document.getElementById('imgEntityList').innerHTML =
+        `<div style="color:#6b7280; font-size:13px;">${escHtml(data.message)}</div>`;
+      document.getElementById('imgEntityCard').style.display = 'block';
+    }
+
+  } catch (err) {
+    document.getElementById('imgLoadingOverlay').classList.remove('active');
+    document.getElementById('redactBtn').disabled = false;
+    alert('Request failed: ' + err.message);
+  }
+}
+
+// ── Decrypt ──
+async function doDecrypt() {
+  const masked_text = document.getElementById('decryptInput').value.trim();
+  const session_id  = document.getElementById('decryptSessionId').value.trim();
+  if (!masked_text || !session_id) { alert('Provide both session ID and masked text.'); return; }
+  const res  = await fetch('/api/decrypt', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({masked_text, session_id})});
+  const data = await res.json();
+  const out  = document.getElementById('decryptOutput');
+  out.classList.remove('empty');
+  out.textContent = data.decrypted || data.error;
+}
+
+// ── Keywords ──
+async function loadKeywords() {
+  const res  = await fetch('/api/get_keywords');
+  const data = await res.json();
+  renderKeywords(data.keywords);
+}
+
+function renderKeywords(keywords) {
+  const el = document.getElementById('keywordList');
+  if (!keywords.length) { el.innerHTML = '<span style="color:#4b5563; font-size:13px;">No keywords yet.</span>'; return; }
+  el.innerHTML = keywords.map(kw =>
+    `<span class="keyword-tag">${escHtml(kw)}<button onclick="removeKeyword('${escHtml(kw)}')">×</button></span>`
+  ).join('');
+}
+
+async function addKeyword() {
+  const keyword = document.getElementById('newKeyword').value.trim().toLowerCase();
+  if (!keyword) return;
+  const res  = await fetch('/api/add_keyword', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keyword})});
+  const data = await res.json();
+  if (data.success) { document.getElementById('newKeyword').value = ''; renderKeywords(data.keywords); }
+  else alert(data.error);
+}
+
+async function removeKeyword(keyword) {
+  const res  = await fetch('/api/remove_keyword', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keyword})});
+  const data = await res.json();
+  if (data.success) renderKeywords(data.keywords);
+}
+
+// ── Analytics ──
+async function loadAnalytics() {
+  const res  = await fetch('/api/analytics');
+  const data = await res.json();
+  document.getElementById('metricOps').textContent      = data.total_operations;
+  document.getElementById('metricLatency').textContent  = data.average_latency_ms;
+  document.getElementById('metricEntities').textContent = data.total_entities_masked;
+  document.getElementById('metricRisk').textContent     = data.average_risk_score;
+}
+
+// ── History ──
+async function loadHistory() {
+  const res  = await fetch('/api/history');
+  const data = await res.json();
+  const el   = document.getElementById('historyList');
+  if (!data.history.length) { el.innerHTML = '<div style="color:#4b5563; font-size:13px;">No operations yet.</div>'; return; }
+  el.innerHTML = [...data.history].reverse().map(h => `
+    <div class="history-item">
+      <div>
+        <div class="mode">${h.mode}</div>
+        <div class="meta">${h.preview || '—'}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="meta">${h.date} ${h.time}</div>
+        <div class="meta">${h.entities} entities • ${h.latency}ms • risk ${h.risk}</div>
+      </div>
+    </div>`).join('');
+}
+
+function escHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>

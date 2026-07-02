@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ghost-Writer Pro — Register</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh; display: flex;
+      align-items: center; justify-content: center;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; padding: 40px;
+      width: 380px; color: #fff;
+    }
+    .logo { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+    .logo span { color: #10b981; }
+    .sub { color: #a1a1aa; font-size: 14px; margin-bottom: 28px; }
+    label { display: block; font-size: 13px; color: #a1a1aa; margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 12px 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px; color: #fff; font-size: 15px;
+      margin-bottom: 18px; outline: none;
+    }
+    input:focus { border-color: #10b981; }
+    button {
+      width: 100%; padding: 13px;
+      background: #10b981; border: none;
+      border-radius: 8px; color: #fff;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #059669; }
+    .msg { font-size: 13px; margin-bottom: 14px; display: none; }
+    .msg.error { color: #f87171; }
+    .msg.success { color: #6ee7b7; }
+    .footer { text-align: center; margin-top: 20px; color: #a1a1aa; font-size: 13px; }
+    .footer a { color: #10b981; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">👻 Ghost<span>Writer</span> Pro</div>
+    <div class="sub">Create your secure account</div>
+    <div class="msg" id="msg"></div>
+    <label>Username</label>
+    <input type="text" id="username" placeholder="Choose a username" autocomplete="off"/>
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Choose a strong password"/>
+    <button onclick="doRegister()">Create Account</button>
+    <div class="footer">Already registered? <a href="/login">Sign in</a></div>
+  </div>
+  <script>
+    async function doRegister() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const msg = document.getElementById('msg');
+      msg.className = 'msg'; msg.style.display = 'none';
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, password})
+      });
+      const data = await res.json();
+      if (data.success) {
+        msg.textContent = '✅ Account created! Redirecting...';
+        msg.classList.add('success'); msg.style.display = 'block';
+        setTimeout(() => window.location.href = '/login', 1500);
+      } else {
+        msg.textContent = data.error;
+        msg.classList.add('error'); msg.style.display = 'block';
+      }
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+  </script>
+</body>
+</html>
