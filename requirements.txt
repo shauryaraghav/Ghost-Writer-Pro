@@ -11,3 +11,4 @@ python-dotenv
 groq
 Pillow
 pytesseract
+gunicorn 
