@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ghost-Writer Pro — React Dashboard</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root{
+    --ink:#0B0E11; --panel:#12161C; --panel-2:#171C24;
+    --line: rgba(255,255,255,0.08);
+    --text:#E7ECF2; --muted:#8892A0;
+    --signal:#3FA796; --signal-dim: rgba(63,167,150,0.15);
+    --risk-low:#3FA796; --risk-mid:#E0A458; --risk-high:#D96C6C;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--ink); color:var(--text); font-family:var(--sans); line-height:1.5; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:40px 24px 80px; }
+  .top{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:32px; flex-wrap:wrap; gap:12px;}
+  .brand{ font-size:15px; letter-spacing:0.02em; color:var(--muted); }
+  .brand b{ color:var(--text); font-weight:600; }
+  h1{ font-size:28px; font-weight:700; letter-spacing:-0.01em; margin:6px 0 2px; }
+  .sub{ color:var(--muted); font-size:14px; }
+  .stat-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden; margin:28px 0; }
+  .stat{ background:var(--panel); padding:18px 20px; }
+  .stat .num{ font-family:var(--mono); font-size:26px; font-weight:600; }
+  .stat .label{ color:var(--muted); font-size:12px; margin-top:4px; }
+  .grid{ display:grid; grid-template-columns:1.1fr 0.9fr; gap:20px; align-items:start; }
+  @media (max-width:760px){ .grid{ grid-template-columns:1fr; } .stat-row{ grid-template-columns:repeat(2,1fr); } }
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:22px; }
+  .panel h2{ font-size:13px; text-transform:none; color:var(--muted); font-weight:600; margin-bottom:14px; }
+  textarea{ width:100%; min-height:120px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; color:var(--text); font-family:var(--sans); font-size:14px; padding:12px; resize:vertical; }
+  textarea:focus, select:focus{ outline:none; border-color:var(--signal); }
+  .row{ display:flex; gap:10px; margin-top:12px; align-items:center; }
+  select{ background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:9px 10px; font-size:13px; font-family:var(--sans); }
+  button{ background:var(--signal); color:#06110F; border:none; border-radius:8px; padding:10px 18px; font-weight:600; font-size:13px; cursor:pointer; }
+  button:disabled{ opacity:0.5; cursor:default; }
+  button.ghost{ background:transparent; border:1px solid var(--line); color:var(--text); }
+  .result{ margin-top:16px; border-top:1px solid var(--line); padding-top:16px; }
+  .masked{ font-family:var(--mono); font-size:13px; background:var(--panel-2); border-radius:8px; padding:12px; white-space:pre-wrap; word-break:break-word; }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .chip{ font-family:var(--mono); font-size:11px; background:var(--signal-dim); color:var(--signal); border-radius:5px; padding:3px 8px; }
+  .risk-badge{ font-family:var(--mono); font-size:12px; padding:3px 9px; border-radius:5px; font-weight:600; }
+  .meta-line{ color:var(--muted); font-size:12px; margin-top:10px; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; color:var(--muted); font-weight:500; font-size:11px; text-transform:none; padding:0 0 8px; border-bottom:1px solid var(--line); }
+  td{ padding:9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  td.mono{ font-family:var(--mono); font-size:12px; }
+  .empty{ color:var(--muted); font-size:13px; padding:20px 0; text-align:center; }
+  .bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:12px; }
+  .bar-label{ width:130px; color:var(--muted); font-family:var(--mono); flex-shrink:0; }
+  .bar-track{ flex:1; height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--signal); }
+  .bar-count{ width:26px; text-align:right; font-family:var(--mono); color:var(--muted); }
+  .error-box{ background:rgba(217,108,108,0.12); border:1px solid rgba(217,108,108,0.3); color:var(--risk-high); border-radius:8px; padding:12px 14px; font-size:13px; margin-top:14px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+function riskColor(score){
+  if (score >= 60) return 'var(--risk-high)';
+  if (score >= 25) return 'var(--risk-mid)';
+  return 'var(--risk-low)';
+}
+
+function StatRow({ analytics }) {
+  const stats = [
+    { label: 'Total operations', value: analytics ? analytics.total_operations : '—' },
+    { label: 'Avg latency', value: analytics ? `${analytics.average_latency_ms} ms` : '—' },
+    { label: 'Entities masked', value: analytics ? analytics.total_entities_masked : '—' },
+    { label: 'Avg risk score', value: analytics ? `${analytics.average_risk_score}/100` : '—' },
+  ];
+  return (
+    <div className="stat-row">
+      {stats.map(s => (
+        <div className="stat" key={s.label}>
+          <div className="num">{s.value}</div>
+          <div className="label">{s.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EntityBreakdown({ analytics }) {
+  if (!analytics || !analytics.entity_type_totals || Object.keys(analytics.entity_type_totals).length === 0) {
+    return <div className="empty">No entities masked yet — run a redaction to populate this.</div>;
+  }
+  const entries = Object.entries(analytics.entity_type_totals).sort((a,b) => b[1]-a[1]);
+  const max = entries[0][1];
+  return (
+    <div>
+      {entries.map(([type, count]) => (
+        <div className="bar-row" key={type}>
+          <div className="bar-label">{type}</div>
+          <div className="bar-track"><div className="bar-fill" style={{width: `${(count/max)*100}%`}}/></div>
+          <div className="bar-count">{count}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HistoryTable({ history }) {
+  if (!history || history.length === 0) {
+    return <div className="empty">No operations recorded yet.</div>;
+  }
+  const rows = [...history].reverse().slice(0, 8);
+  return (
+    <table>
+      <thead>
+        <tr><th>Time</th><th>Mode</th><th>Entities</th><th>Risk</th><th>Latency</th></tr>
+      </thead>
+      <tbody>
+        {rows.map((r, i) => (
+          <tr key={i}>
+            <td className="mono">{r.time}</td>
+            <td>{r.mode}</td>
+            <td className="mono">{r.entities}</td>
+            <td><span className="risk-badge" style={{color: riskColor(r.risk), background: 'rgba(255,255,255,0.04)'}}>{r.risk}</span></td>
+            <td className="mono">{r.latency}ms</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function RedactPanel({ onDone }) {
+  const [text, setText] = useState('');
+  const [mode, setMode] = useState('mask');
+  const [epsilon, setEpsilon] = useState(1.0);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  const run = useCallback(async () => {
+    if (!text.trim()) return;
+    setLoading(true); setError(null); setResult(null);
+    try {
+      const url = mode === 'mask' ? '/api/mask' : '/api/differential';
+      const body = mode === 'mask' ? { text } : { text, epsilon: Number(epsilon) };
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      setResult(data);
+      onDone && onDone();
+    } catch (e) {
+      setError(e.message || 'Something went wrong — are you logged in?');
+    } finally {
+      setLoading(false);
+    }
+  }, [text, mode, epsilon, onDone]);
+
+  return (
+    <div className="panel">
+      <h2>Run redaction</h2>
+      <textarea
+        placeholder="Paste text containing PII — a name, PAN, Aadhaar, phone, email…"
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <div className="row">
+        <select value={mode} onChange={e => setMode(e.target.value)}>
+          <option value="mask">Basic mask</option>
+          <option value="differential">Differential privacy</option>
+        </select>
+        {mode === 'differential' && (
+          <input
+            type="number" step="0.1" min="0.1" value={epsilon}
+            onChange={e => setEpsilon(e.target.value)}
+            style={{width:70, background:'var(--panel-2)', border:'1px solid var(--line)', borderRadius:8, color:'var(--text)', padding:'9px 10px', fontSize:13}}
+          />
+        )}
+        <button onClick={run} disabled={loading || !text.trim()}>
+          {loading ? 'Running…' : 'Redact'}
+        </button>
+      </div>
+
+      {error && <div className="error-box">{error}</div>}
+
+      {result && (
+        <div className="result">
+          <div className="masked">{result.masked || result.noisy}</div>
+          <div className="chips">
+            {Object.entries(result.stats || {}).map(([k,v]) => (
+              <span className="chip" key={k}>{k} × {v}</span>
+            ))}
+          </div>
+          <div className="meta-line">
+            {result.total_entities} entities · {result.latency}ms ·{' '}
+            <span style={{color: riskColor(result.risk_score)}}>risk {result.risk_score}/100</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  const [analytics, setAnalytics] = useState(null);
+  const [history, setHistory] = useState(null);
+  const [authError, setAuthError] = useState(false);
+
+  const refresh = useCallback(() => {
+    fetch('/api/analytics', { credentials: 'same-origin' })
+      .then(r => { if (r.status === 401) throw new Error('auth'); return r.json(); })
+      .then(setAnalytics)
+      .catch(() => setAuthError(true));
+    fetch('/api/history', { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(d => setHistory(d.history))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return (
+    <div className="wrap">
+      <div className="top">
+        <div>
+          <div className="brand">👻 <b>Ghost-Writer Pro</b> — React Dashboard</div>
+          <h1>Redaction overview</h1>
+          <div className="sub">Live metrics from your session, pulled straight from the Flask API.</div>
+        </div>
+        <button className="ghost" onClick={refresh}>Refresh</button>
+      </div>
+
+      {authError && (
+        <div className="error-box">
+          You're not logged in — <a href="/login" style={{color:'inherit'}}>log in</a> first, then reload this page.
+        </div>
+      )}
+
+      <StatRow analytics={analytics} />
+
+      <div className="grid">
+        <RedactPanel onDone={refresh} />
+        <div className="panel">
+          <h2>Entity types masked</h2>
+          <EntityBreakdown analytics={analytics} />
+        </div>
+      </div>
+
+      <div className="panel" style={{marginTop:20}}>
+        <h2>Recent operations</h2>
+        <HistoryTable history={history} />
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
