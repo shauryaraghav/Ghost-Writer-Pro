@@ -611,6 +611,16 @@ def index_page():
         return render_template("index.html")
     return redirect(url_for("login_page"))
 
+@app.route("/react-dashboard")
+@login_required
+def react_dashboard():
+    # Served as raw HTML (not through Jinja) since the file's own
+    # {{ }} braces are JSX/template-literal syntax, not Jinja tags.
+    path = os.path.join(app.root_path, "templates", "react_dashboard.html")
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
 @app.route("/login")
 def login_page():
     return render_template("login.html")
