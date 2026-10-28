@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ghost-Writer Pro — Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 40px;
+      width: 380px;
+      color: #fff;
+    }
+    .logo { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+    .logo span { color: #7c3aed; }
+    .sub { color: #a1a1aa; font-size: 14px; margin-bottom: 28px; }
+    label { display: block; font-size: 13px; color: #a1a1aa; margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 12px 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px; color: #fff; font-size: 15px;
+      margin-bottom: 18px; outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #7c3aed; }
+    button {
+      width: 100%; padding: 13px;
+      background: #7c3aed; border: none;
+      border-radius: 8px; color: #fff;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: background 0.2s;
+    }
+    button:hover { background: #6d28d9; }
+    .error { color: #f87171; font-size: 13px; margin-bottom: 14px; display: none; }
+    .footer { text-align: center; margin-top: 20px; color: #a1a1aa; font-size: 13px; }
+    .footer a { color: #7c3aed; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">👻 Ghost<span>Writer</span> Pro</div>
+    <div class="sub">Secure AI Communication Engine</div>
+    <div class="error" id="err"></div>
+    <label>Username</label>
+    <input type="text" id="username" placeholder="Enter username" autocomplete="off"/>
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter password"/>
+    <button onclick="doLogin()">Sign In</button>
+    <div class="footer">No account? <a href="/register">Register here</a></div>
+  </div>
+  <script>
+    async function doLogin() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const err = document.getElementById('err');
+      err.style.display = 'none';
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, password})
+      });
+      const data = await res.json();
+      if (data.success) { window.location.href = '/'; }
+      else { err.textContent = data.error; err.style.display = 'block'; }
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  </script>
+</body>
+</html>
